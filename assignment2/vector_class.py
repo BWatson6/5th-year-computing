@@ -9,8 +9,6 @@ object orientated programing
 
 """
 
-THIS IS A TEST TO SEE IF I CAN PUSH STUFF ONTO GIT
-
 
 import numpy as np
 
@@ -22,12 +20,16 @@ class vector():
         self.z = z_value
     
     def __str__(self):
-        return f'({self.x}, {self.y}, {self.z})'
+        return f'vector({self.x}, {self.y}, {self.z})'
     
     def magnitude(self):
         return np.sqrt(self.x**2 + self.y**2 + self.z**2)
     
     def __add__(self, other_vector):
+        # cls.x = cls.x+other_vector.x
+        # cls.y = cls.y+other_vector.y
+        # cls.z = cls.z+other_vector.z
+        # return cls(cls.x, cls.y, cls.z)
         return vector(self.x+other_vector.x, 
                       self.y+other_vector.y,
                       self.z+other_vector.z)
@@ -47,45 +49,62 @@ class vector():
         return vector(new_x, new_y, new_z)
     
 
+
+# class vector_spherical(vector):
+#     def __init__(self, r_value, theta_value, phi_value):
+        
+
+
 class vector_spherical_polar(vector):
     # when initialised it also initalises the vector class and 
     def __init__(self, r_value, theta_value, phi_value, degrees=True):
+        self.degree = degrees
         # need to convert from degrees to radians
-        if degrees==True:
+        if self.degree==True:
             theta_value = theta_value * np.pi/180
             phi_value = phi_value * np.pi/180
-            
+        
+        # or could use super().__init__(x, y, x) and it would do the same thing
         vector.__init__(self,
                         r_value*np.sin(theta_value)*np.cos(phi_value),
                         r_value*np.sin(theta_value)*np.sin(phi_value),
                         r_value*np.cos(theta_value))
     
         
-    # defineing the r, theta and phi again so the can do maths with the vector class then convert back 
+    # defineing the r, theta and phi again so the can do maths with the vector class then convert back         
     def r_value(self):
         return self.magnitude()
     
     def theta_value(self):
-        return np.arccos(self.z/self.magnitude())
+        if self.degree==True:
+            return np.arccos(self.z/self.magnitude())*(180/np.pi)
+        else:
+            return np.arccos(self.z/self.magnitude())
     
     def phi_value(self):
-        return np.arctan(self.y/self.x)
+        if self.degree==True:
+            return np.arctan(self.y/self.x)*(180/np.pi) 
+        else:
+            return np.arctan(self.y/self.x)
     
     def __str__(self):
-        return f'({self.r_value()}, {self.theta_value()}, {self.phi_value()})'
-        
+        return f'Spherical vector({self.r_value()}, {self.theta_value()}, {self.phi_value()})'
         
     
 def triangle_area(v1, v2, v3):
-    """v1, v2, v3, are allobjects of the class vector"""
+    """v1, v2, v3, are all objects of the class vector"""
     v1v2_difference = v1-v2
     v1v3_difference = v1-v3
     cross_calculation = v1v2_difference.cross(v1v3_difference)
     area = 0.5 * cross_calculation.magnitude()
     return area
      
-    
-    
+def angles(v1, v2, v3): #currently in radians not quite there also need to take differences between angles to get it to work
+    angle_1 = np.arccos(v1.dot(v2)/(v1.magnitude()*v2.magnitude()))
+    angle_2 = np.arccos(v2.dot(v3)/(v2.magnitude()*v3.magnitude()))
+    angle_3 = np.arccos(v3.dot(v1)/(v3.magnitude()*v1.magnitude()))
+    return f"in radians: {angle_1}, {angle_2}, {angle_3}"
+   
 
 # a = vector(2, 3, 1)
 # b = vector(7, 2, 6)
@@ -108,19 +127,51 @@ print('area 1 is:',AREA)
 
 test1 = vector_spherical_polar(3, 7, 2)
 test2 = vector_spherical_polar(9, 5, 1)
+print(test2.x)
+c = test1+test2
+
+print('\n', test1)
+print('\n', test2)
+print('\n', c, 'sum sphere')
+
+#%% Calculations for part 3a of assignment 
+
+a1 = vector(0, 0, 0)
+a2 = vector(1, 0, 0)
+a3 = vector(0, 1, 0)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 1 is:',AREA)
+#print('angles for 1', angles(a1, a2, a3))
+
+a1 = vector(-1, -1, -1)
+a2 = vector(0, -1, -1)
+a3 = vector(-1, 0, -1)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 2 is:',AREA)
+
+a1 = vector(1, 0, 0)
+a2 = vector(0, 0, 1)
+a3 = vector(0, 0, 0)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 3 is:',AREA)
+
+a1 = vector(0, 0, 0)
+a2 = vector(1, -1, 0)
+a3 = vector(0, 0, 1)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 4 is:',AREA)
 
 
-print(test1)
-print(test1+test2, 'sum sphere')
+#%%% Calculations for 3c
 
+c1 = vector_spherical_polar(0, 0, 0)
+c2 = vector_spherical_polar(1, 0, 0)
+c3 = vector_spherical_polar(1, 90, 0)
 
-
-
-
-
-
-
-
-
+print('\n\nArea 5:', triangle_area(c1, c2, c3)) # need to cheack for more but looks promising
 
 
