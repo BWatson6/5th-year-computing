@@ -8,6 +8,10 @@ assignment 2
 object orientated programing
 
 """
+
+THIS IS A TEST TO SEE IF I CAN PUSH STUFF ONTO GIT
+
+
 import numpy as np
 
 class vector():
