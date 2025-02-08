@@ -100,10 +100,14 @@ def triangle_area(v1, v2, v3):
     return area
      
 def angles(v1, v2, v3): #currently in radians not quite there also need to take differences between angles to get it to work
-    angle_1 = np.arccos(v1.dot(v2)/(v1.magnitude()*v2.magnitude()))
-    angle_2 = np.arccos(v2.dot(v3)/(v2.magnitude()*v3.magnitude()))
-    angle_3 = np.arccos(v3.dot(v1)/(v3.magnitude()*v1.magnitude()))
-    return f"in radians: {angle_1}, {angle_2}, {angle_3}"
+
+    side1 = v1-v2
+    side2 = v2-v3
+    side3 = v3-v1
+    angle_1 = 180/np.pi*(np.pi-np.arccos(side1.dot(side2)/(side1.magnitude()*side2.magnitude())))
+    angle_2 = 180/np.pi*(np.pi-np.arccos(side2.dot(side3)/(side2.magnitude()*side3.magnitude())))
+    angle_3 = 180/np.pi*(np.pi-np.arccos(side3.dot(side1)/(side3.magnitude()*side1.magnitude())))
+    return f"in degrees: {angle_1}, {angle_2}, {angle_3}"
    
 
 # a = vector(2, 3, 1)
@@ -142,7 +146,7 @@ a3 = vector(0, 1, 0)
 
 AREA = triangle_area(a1, a2, a3)
 print('\narea 1 is:',AREA)
-#print('angles for 1', angles(a1, a2, a3))
+print('angles for 1', angles(a1, a2, a3))
 
 a1 = vector(-1, -1, -1)
 a2 = vector(0, -1, -1)
@@ -150,6 +154,7 @@ a3 = vector(-1, 0, -1)
 
 AREA = triangle_area(a1, a2, a3)
 print('\narea 2 is:',AREA)
+print('angles for 2', angles(a1, a2, a3))
 
 a1 = vector(1, 0, 0)
 a2 = vector(0, 0, 1)
@@ -157,6 +162,7 @@ a3 = vector(0, 0, 0)
 
 AREA = triangle_area(a1, a2, a3)
 print('\narea 3 is:',AREA)
+print('angles for 3', angles(a1, a2, a3))
 
 a1 = vector(0, 0, 0)
 a2 = vector(1, -1, 0)
@@ -164,7 +170,7 @@ a3 = vector(0, 0, 1)
 
 AREA = triangle_area(a1, a2, a3)
 print('\narea 4 is:',AREA)
-
+print('angles for 4', angles(a1, a2, a3))
 
 #%%% Calculations for 3c
 
@@ -172,6 +178,29 @@ c1 = vector_spherical_polar(0, 0, 0)
 c2 = vector_spherical_polar(1, 0, 0)
 c3 = vector_spherical_polar(1, 90, 0)
 
-print('\n\nArea 5:', triangle_area(c1, c2, c3)) # need to cheack for more but looks promising
+print('\n\nArea 5:', triangle_area(c1, c2, c3)) 
+print('angles for 5', angles(c1, c2, c3))
 
 
+c1 = vector_spherical_polar(1, 0, 0)
+c2 = vector_spherical_polar(1, 90, 0)
+c3 = vector_spherical_polar(1, 90, 180)
+
+print('\nArea 6:', triangle_area(c1, c2, c3)) 
+print('angles for 6', angles(c1, c2, c3))
+
+
+c1 = vector_spherical_polar(0, 0, 0)
+c2 = vector_spherical_polar(2, 0, 0)
+c3 = vector_spherical_polar(2, 90, 0)
+
+print('\nArea 7:', triangle_area(c1, c2, c3)) 
+print('angles for 7', angles(c1, c2, c3))
+
+
+c1 = vector_spherical_polar(1, 90, 0)
+c2 = vector_spherical_polar(1, 90, 180)
+c3 = vector_spherical_polar(1, 90, 270)
+
+print('\nArea 8:', triangle_area(c1, c2, c3)) 
+print('angles for 8', angles(c1, c2, c3))
