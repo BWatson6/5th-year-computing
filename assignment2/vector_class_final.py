@@ -13,7 +13,7 @@ import numpy as np
 
 class Vector():
     """
-    vector class used to store a vecotr in cartisian coordinates
+    vector class used to store a vectors in cartisian coordinates
     can also compete the following operations on the vector:
         
     magnitude - finds the magnitude of a vector
@@ -137,15 +137,15 @@ class Vector():
         elif self.x_stored == 0: # if x is zero tan is going to give an error
             phi_value = 90 # degrees
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
-            
+
         elif self.x_stored < 0:
             phi_value = (np.pi-np.arctan(self.y_stored/self.x_stored)) * 180/np.pi
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
-            
-        else: # 
+
+        else:
             phi_value = np.arctan(self.y_stored/self.x_stored) * 180/np.pi
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
-        
+
         # if phi_value == -0.0:
         #     phi_value = 180 # degrees
         return [r_value, theta_value, phi_value]
@@ -154,8 +154,35 @@ class Vector():
 
 
 class SphericalVector(Vector):
+    """
+    vector class used to store a vectors in spherical coordinates
+    can also compete the following operations on the vector:
+        
+    magnitude - finds the magnitude of a vector
+    __add__ - sums two vecors together
+    __sub__ - takes the difference of two vectors
+    dot - finds the cross product of two vectors
+    cross - finds the cross product of two vectors
+    """
 
     def __init__(self, r_value, theta_value, phi_value):
+        """
+        stores the inputed vector in cartisian coordinates 
+
+        Parameters
+        ----------
+        r_value : magnatude of vector in degrees
+
+        theta_value : angle between vector and z axis in degrees
+
+        phi_value : angle in the x-y plane that the vector makes with 
+        respect to the x-axis
+
+        Returns
+        -------
+        None.
+
+        """
         #convert to radians
         theta_value = theta_value*np.pi/180
         phi_value = phi_value*np.pi/180
@@ -166,15 +193,39 @@ class SphericalVector(Vector):
                         r_value*np.cos(theta_value))
 
     def r_value(self):
+        """
+        
+
+        Returns the r value for a spherical vector (the magnitude of the vector)
+        -------
+        TYPE float
+
+        """
         return self.magnitude()
 
     def theta_value(self):
+        """
+        
+
+        Returns the theta value for a given spherical vector in degrees
+        -------
+        TYPE float
+
+        """
         if self.magnitude()==0:
             return 0.0 # angle is meaningless if vector has 0 magnitude
 
         return np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
 
     def phi_value(self):
+        """
+        
+
+        Returns the phi value for a given spherical vector in degrees
+        -------
+        TYPE float
+
+        """
         if self.magnitude()==0:
             return 0.0 # angle is meaningless if not got a magnitude
         if self.x_stored==0:
@@ -202,19 +253,56 @@ class SphericalVector(Vector):
         return SphericalVector(spherical_list[0], spherical_list[1], spherical_list[2])
 
 
-def triangle_area(v1, v2, v3):
-    """v1, v2, v3, are allobjects of the class Vector or SphericalVector"""
-    v1v2_difference = v1-v2
-    v1v3_difference = v1-v3
+def triangle_area(v_1, v_2, v_3):
+    """
+    calculates the area in 3d space that is defined by three vectors that
+    are either in catisian or spherical coordinates 
+
+    Parameters
+    ----------
+    v_1 : vector 1 as Vector class or SphericalVector
+        DESCRIPTION.
+    v_2 : vector 2 as Vector class or SphericalVector
+        DESCRIPTION.
+    v_3 : vector 3 as Vector class or SphericalVector
+        DESCRIPTION.
+
+    Returns
+    -------
+    str
+        prints the area of the triangle to 3 significant figures.
+    """
+
+    v1v2_difference = v_1-v_2
+    v1v3_difference = v_1-v_3
     cross_calculation = v1v2_difference.cross(v1v3_difference)
     area = 0.5 * cross_calculation.magnitude()
     return f'{area:.3}'
 
-def angles(v1, v2, v3): # hope this just works :((
+def angles(v_1, v_2, v_3):
+    """
+    calculates the internal angles of a triangle difined by 3 3d vectors
+    these can be in cartisian or spherical vectors.
+    
 
-    side1 = v1-v2
-    side2 = v2-v3
-    side3 = v3-v1
+    Parameters
+    ----------
+    v_1 : vector 1 as Vector class or SphericalVector
+
+    v_2 : vector 2 as Vector class or SphericalVector
+
+    v_3 : vector 3 as Vector class or SphericalVector
+
+
+    Returns
+    -------
+    str
+        prints the three internal angles of the triangle to 3 decimal places
+    """
+
+    side1 = v_1-v_2
+    side2 = v_2-v_3
+    side3 = v_3-v_1
     # the 180/pi is to convert to degrees
     # taking the answer from pi to get the direction correct?
     angle_1 = 180/np.pi*(np.pi-np.arccos(side1.dot(side2)/(side1.magnitude()*side2.magnitude())))
@@ -222,13 +310,15 @@ def angles(v1, v2, v3): # hope this just works :((
     angle_3 = 180/np.pi*(np.pi-np.arccos(side3.dot(side1)/(side3.magnitude()*side1.magnitude())))
     return f"in degrees: {angle_1:.3}, {angle_2:.3}, {angle_3:.3}"
 
-#%% testing stuffs should delete before submission
+#%% 
 
-print('TESTING CLASSES')
+print('Showing parts 1 and 2 requirments have been implemented:')
 a = Vector(-1, -1, -1)
+print('vector a is:', a)
 b = Vector(0, -1, -1)
+print('vector b is:', b)
 c = Vector(-1, 0, -1) # for triangle
-print('magnitude of a:', a.magnitude()) #correct
+print('\nmagnitude of a:', a.magnitude()) #correct
 print('\nVector sum:', a+b) # correct
 print('\nVector sub:', b-a) # correct
 print('\na.b:', a.dot(b)) # correct
@@ -236,7 +326,7 @@ print('\naxb:', a.cross(b)) # correct
 
 print('\n----------------\nSPHERICAL VECTOR TEST:')
 x = SphericalVector(1, 90, 0)
-y = SphericalVector(1, 90, 180)
+y = SphericalVector(1, 90, 45)
 z = SphericalVector(1, 90, 270)
 print('x vector', x)
 print('y vector', y)
@@ -244,20 +334,16 @@ print('\nx magnitude:', x.magnitude()) # correct
 print('x r value', x.r_value()) # correct
 print('\nspherical sum:', x+y) # correct
 print('spherical difference:', y-x) #correct? i am to lazy to check
-print('x.y', x.dot(y)) # no need for extra dot definition as the output is the same as regular vector
+print('x.y', x.dot(y))
 print('xy', x.cross(y)) # does return value that looks somewhat reasonable
 
-print('\n----------------\nAREA CALCULATIONS and ANGELS:')
-print('area from cartisian:', triangle_area(a, b, c))
-print('area from spherical:', triangle_area(x, y, z)) 
-print('angels for cartisian:', angles(a, b, c))
-print('angels for sherical:', angles(x, y, z))# now this does not seem right
+
 
 
 
 
 #%% try with the vectors from assignment
-print('\n---------------\nAssignmant 2 vector calculations')
+print('\n---------------\nPart 3a vector calculations')
 a1 = Vector(0, 0, 0)
 a2 = Vector(1, 0, 0)
 a3 = Vector(0, 1, 0)
@@ -290,7 +376,7 @@ AREA = triangle_area(a1, a2, a3)
 print('\narea 4 is:',AREA)
 print('angles for 4', angles(a1, a2, a3))
 
-print('\n----------------\nSpherical vector calculations:')
+print('\n----------------\nPart 3c Spherical vector calculations:')
 #this isnt working correctly
 c1 = SphericalVector(0, 0, 0)
 c2 = SphericalVector(1, 0, 0)
