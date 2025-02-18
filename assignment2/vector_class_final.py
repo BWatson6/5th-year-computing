@@ -134,13 +134,20 @@ class Vector():
         if self.magnitude()==0: # if statments to try and avoid code not working
             theta_value = 0
             phi_value = 0
-        elif self.x_stored == 0:
+        elif self.x_stored == 0: # if x is zero tan is going to give an error
             phi_value = 90 # degrees
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
-        else:
+            
+        elif self.x_stored < 0:
+            phi_value = (np.pi-np.arctan(self.y_stored/self.x_stored)) * 180/np.pi
+            theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
+            
+        else: # 
             phi_value = np.arctan(self.y_stored/self.x_stored) * 180/np.pi
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
-
+        
+        # if phi_value == -0.0:
+        #     phi_value = 180 # degrees
         return [r_value, theta_value, phi_value]
 
 
@@ -201,9 +208,19 @@ def triangle_area(v1, v2, v3):
     v1v3_difference = v1-v3
     cross_calculation = v1v2_difference.cross(v1v3_difference)
     area = 0.5 * cross_calculation.magnitude()
-    return area
+    return f'{area:.3}'
 
+def angles(v1, v2, v3): # hope this just works :((
 
+    side1 = v1-v2
+    side2 = v2-v3
+    side3 = v3-v1
+    # the 180/pi is to convert to degrees
+    # taking the answer from pi to get the direction correct?
+    angle_1 = 180/np.pi*(np.pi-np.arccos(side1.dot(side2)/(side1.magnitude()*side2.magnitude())))
+    angle_2 = 180/np.pi*(np.pi-np.arccos(side2.dot(side3)/(side2.magnitude()*side3.magnitude())))
+    angle_3 = 180/np.pi*(np.pi-np.arccos(side3.dot(side1)/(side3.magnitude()*side1.magnitude())))
+    return f"in degrees: {angle_1:.3}, {angle_2:.3}, {angle_3:.3}"
 
 #%% testing stuffs should delete before submission
 
@@ -230,6 +247,78 @@ print('spherical difference:', y-x) #correct? i am to lazy to check
 print('x.y', x.dot(y)) # no need for extra dot definition as the output is the same as regular vector
 print('xy', x.cross(y)) # does return value that looks somewhat reasonable
 
-print('\n----------------\nAREA CALCULATIONS:')
+print('\n----------------\nAREA CALCULATIONS and ANGELS:')
 print('area from cartisian:', triangle_area(a, b, c))
-print('area from spherical:', triangle_area(x, y, z)) #seems kinda small???
+print('area from spherical:', triangle_area(x, y, z)) 
+print('angels for cartisian:', angles(a, b, c))
+print('angels for sherical:', angles(x, y, z))# now this does not seem right
+
+
+
+
+#%% try with the vectors from assignment
+print('\n---------------\nAssignmant 2 vector calculations')
+a1 = Vector(0, 0, 0)
+a2 = Vector(1, 0, 0)
+a3 = Vector(0, 1, 0)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 1 is:',AREA)
+print('angles for 1', angles(a1, a2, a3))
+
+a1 = Vector(-1, -1, -1)
+a2 = Vector(0, -1, -1)
+a3 = Vector(-1, 0, -1)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 2 is:',AREA)
+print('angles for 2', angles(a1, a2, a3))
+
+a1 = Vector(1, 0, 0)
+a2 = Vector(0, 0, 1)
+a3 = Vector(0, 0, 0)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 3 is:',AREA)
+print('angles for 3', angles(a1, a2, a3))
+
+a1 = Vector(0, 0, 0)
+a2 = Vector(1, -1, 0)
+a3 = Vector(0, 0, 1)
+
+AREA = triangle_area(a1, a2, a3)
+print('\narea 4 is:',AREA)
+print('angles for 4', angles(a1, a2, a3))
+
+print('\n----------------\nSpherical vector calculations:')
+#this isnt working correctly
+c1 = SphericalVector(0, 0, 0)
+c2 = SphericalVector(1, 0, 0)
+c3 = SphericalVector(1, 90, 0)
+
+print('\n\nArea 5:', triangle_area(c1, c2, c3))
+print('angles for 5', angles(c1, c2, c3))
+
+
+c1 = SphericalVector(1, 0, 0)
+c2 = SphericalVector(1, 90, 0)
+c3 = SphericalVector(1, 90, 180)
+
+print('\nArea 6:', triangle_area(c1, c2, c3)) # something isn't right over here
+print('angles for 6', angles(c1, c2, c3))
+
+
+c1 = SphericalVector(0, 0, 0)
+c2 = SphericalVector(2, 0, 0)
+c3 = SphericalVector(2, 90, 0)
+
+print('\nArea 7:', triangle_area(c1, c2, c3))
+print('angles for 7', angles(c1, c2, c3))
+
+
+c1 = SphericalVector(1, 90, 0)
+c2 = SphericalVector(1, 90, 180)
+c3 = SphericalVector(1, 90, 270)
+
+print('\nArea 8:', triangle_area(c1, c2, c3))
+print('angles for 8', angles(c1, c2, c3))
