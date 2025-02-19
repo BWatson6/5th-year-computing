@@ -6,7 +6,6 @@ Created on Sun Feb 16 08:55:02 2025
 
 vector class for assignment 2 
 
-in discussion with Eamonn McHugh for spherical coordinates class
 """
 
 import numpy as np
@@ -146,8 +145,7 @@ class Vector():
             phi_value = np.arctan(self.y_stored/self.x_stored) * 180/np.pi
             theta_value = np.arccos(self.z_stored/self.magnitude()) * 180/np.pi
 
-        # if phi_value == -0.0:
-        #     phi_value = 180 # degrees
+
         return [r_value, theta_value, phi_value]
 
 
@@ -310,7 +308,7 @@ def angles(v_1, v_2, v_3):
     angle_3 = 180/np.pi*(np.pi-np.arccos(side3.dot(side1)/(side3.magnitude()*side1.magnitude())))
     return f"in degrees: {angle_1:.3}, {angle_2:.3}, {angle_3:.3}"
 
-#%% 
+#%%
 
 print('Showing parts 1 and 2 requirments have been implemented:')
 a = Vector(-1, -1, -1)
@@ -318,11 +316,11 @@ print('vector a is:', a)
 b = Vector(0, -1, -1)
 print('vector b is:', b)
 c = Vector(-1, 0, -1) # for triangle
-print('\nmagnitude of a:', a.magnitude()) #correct
-print('\nVector sum:', a+b) # correct
-print('\nVector sub:', b-a) # correct
-print('\na.b:', a.dot(b)) # correct
-print('\naxb:', a.cross(b)) # correct
+print('\nmagnitude of a:', a.magnitude())
+print('\nVector sum:', a+b)
+print('\nVector sub:', b-a)
+print('\na.b:', a.dot(b))
+print('\naxb:', a.cross(b))
 
 print('\n----------------\nSPHERICAL VECTOR TEST:')
 x = SphericalVector(1, 90, 0)
@@ -330,10 +328,10 @@ y = SphericalVector(1, 90, 45)
 z = SphericalVector(1, 90, 270)
 print('x vector', x)
 print('y vector', y)
-print('\nx magnitude:', x.magnitude()) # correct
-print('x r value', x.r_value()) # correct
-print('\nspherical sum:', x+y) # correct
-print('spherical difference:', y-x) #correct? i am to lazy to check
+print('\nx magnitude:', x.magnitude())
+print('x r value', x.r_value())
+print('\nspherical sum:', x+y)
+print('spherical difference:', y-x)
 print('x.y', x.dot(y))
 print('xy', x.cross(y)) # does return value that looks somewhat reasonable
 
