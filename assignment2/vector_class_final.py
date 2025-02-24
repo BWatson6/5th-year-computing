@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Feb 16 08:55:02 2025
-
 @author: Ben
+
+Copyright (C) 2025 Ben Watson. Subject to MIT License  
 
 vector class for assignment 2 
 
@@ -406,3 +407,4 @@ c3 = SphericalVector(1, 90, 270)
 
 print('\nArea 8:', triangle_area(c1, c2, c3))
 print('angles for 8', angles(c1, c2, c3))
+
