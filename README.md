@@ -1,1 +1,1 @@
-Repository for to try and keep track of code that i've written for the advanced computing class
+Repository to try and keep track of code that i've written for the advanced computing class
