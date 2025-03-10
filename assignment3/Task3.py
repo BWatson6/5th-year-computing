@@ -6,6 +6,7 @@ Created on Mon Mar  3 14:36:20 2025
 """
 
 import numpy as np
+# import scipy as sp
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -20,13 +21,16 @@ class paralelMonty():
         self.interval = interval
         
         if len(interval) == 1: # does the sample_function with no interval
-            # 2^dimentions is because the interval for this is always going to be (1--1)
+            
             sampled_function = self.OverAllSpace(function, 
                                                  self.dimentions,
                                                  numb_of_samples, 
-                                                 *args) * 2**dimentions
+                                                 *args)
             
+            self.difference = 2
             self.expected_rank = self.expectation(sampled_function)
+            # 2^dimentions is because the interval for this is always going to be (1--1)
+            self.intergral = self.expected_rank*2**dimentions
 
 
         
@@ -35,24 +39,26 @@ class paralelMonty():
             random_inputs = np.random.uniform(interval[0], interval[1], 
                                               size=(numb_of_samples*dimentions))      
             random_inputs = np.resize(random_inputs, (numb_of_samples, dimentions))
+            
+            self.difference = interval[1]-interval[0]
           
             # inputing the random input values into the function getting evaluated
             # interval part only works if its the same in all dimensions
-            sampled_function = function(random_inputs, *args)*(interval[1]-interval[0])**self.dimentions 
+            sampled_function = function(random_inputs, *args)
+            self.expected_rank = self.expectation(sampled_function)
+            self.intergral = self.expected_rank*(interval[1]-interval[0])**self.dimentions
             
-        self.expected_rank = self.expectation(sampled_function)
         self.varience_rank = self.varience(sampled_function)
         
 
 
 
     def expectation(self, value):
-        expectation = 1/self.numb_of_samples * np.sum(value)
-        return expectation
 
-    def varience(self, value):
-        varience = self.expectation(value**2) - self.expectation(value)**2
-        return varience
+        return np.mean(value)
+
+    def varience(self, value): # think were not quite ther yet with this hmmm
+        return np.var(value)/self.numb_of_samples
     
 
 
@@ -66,13 +72,19 @@ class paralelMonty():
         varience_sum  = comm.reduce(self.varience_rank/numb_of_ranks, 
                                       op=MPI.SUM, 
                                       root=0)
+        intergral_sum = comm.reduce(self.intergral/numb_of_ranks, 
+                                    op=MPI.SUM, 
+                                    root=0)
 
 
         
         # rank 0 calcualates the statistics with what it recives from the other ranks
         if comm.Get_rank()==0: 
-            print('mean value:', expectaion_sum)
-            print('varience value:', varience_sum)
+            print('-----------\nfunction mean value:', expectaion_sum)
+            print('function varience value:', varience_sum)
+            print('INTERGRAL value:', intergral_sum)
+            Intergral_error = np.sqrt(varience_sum)*self.difference
+            print('\nintergral error', Intergral_error)
         
         
     def OverAllSpace(self, function, dimention, samples, *args):
@@ -102,7 +114,7 @@ def Task2Function(trial_coordinates, x_0, sigma):
     return function
 
 
-dimention = 1
+dimention = 2
 # samples is samples per rank
 samples = 10000000
 interval = [-1, 1] # square/cube is centerd on the origin for simplicity 
