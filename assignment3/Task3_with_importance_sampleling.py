@@ -98,6 +98,12 @@ class paralelMonty():
         return new_function
 
 
+
+def RandomCoordinates(interval, dimensions, numb_of_samples):
+    random_inputs = np.random.uniform(interval[0], interval[1], 
+                                      size=(numb_of_samples*dimensions))      
+    random_inputs = np.resize(random_inputs, (numb_of_samples, dimensions))
+    return random_inputs
     
     
 def FillFration(trial_coordinates):
@@ -108,7 +114,7 @@ def FillFration(trial_coordinates):
 
 def Task2Function(trial_coordinates, x_0, sigma):
     top_of_fraction = -np.sum((trial_coordinates-x_0)**2, axis=1)
-    function = 1/(sigma*np.sqrt(2*np.pi))*np.exp(top_of_fraction/(2*sigma**2))
+    function = 1/(sigma*np.sqrt(2*np.pi))*np.exp(top_of_fraction/2*sigma**2)
     return function
 
 def Task1ImportanceFunc(x, dimention):
@@ -134,7 +140,7 @@ def Task1RandomDistribution(x, dimention):
 
 dimention = 2
 # samples is samples per rank
-samples = 1000000
+samples = 100000
 interval = [-1, 1] # square/cube is centerd on the origin for simplicity 
 
 #Task 1
@@ -153,10 +159,9 @@ a = test.addition()
 
 
 #Task 2
-sigma = 6
-d = 1
-x_0 = 5
-#x_0 = np.zeros(d)
+sigma = 1.0
+d = 2
+x_0 = np.zeros(d)
 test2 = paralelMonty(Task2Function, samples, d, x_0, sigma)
 b = test2.addition()
 
