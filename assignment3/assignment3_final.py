@@ -6,8 +6,13 @@ Created on Wed Mar 12 13:49:04 2025
 """
 
 #clean slate
+import time
+import math
 import numpy as np
 from mpi4py import MPI
+
+
+start_time = time.time()
 
 
 class MontyCarlos():
@@ -99,7 +104,7 @@ class MontyCarlos():
             self.function_samples = function(self.random_inputs, *args)
 
         difference = self.interval[1]-self.interval[0]
-        self.expected_val = np.mean(self.function_samples)
+        self.expected_val = self.mean(self.function_samples)
         self.varience_val = self.varience(self.function_samples)
 
         # if interval/boundry become asymetric will need to change these lines
@@ -135,9 +140,11 @@ class MontyCarlos():
 
             varience_global = 1/total_samples * (varience_part1 - varience_part2)
             uncertainty_global = np.sqrt(varience_global)*boundry_product
+
+            end_time = time.time()
             print('Intergral is:', intergral_global,
                   '+/-', uncertainty_global)
-
+            print('time to calculate', end_time-start_time)
 
 
     def varience(self, array):
@@ -149,6 +156,14 @@ class MontyCarlos():
         part2 = np.mean(array)**2
         var = (part1-part2)/len(array)
         return var
+
+    def mean(self, array):
+        """
+        returns the mean of an array of values useing fsum to 
+        try and increase the accuracy of the sum
+
+        """
+        return math.fsum(array)/len(array)
 
 
 def start_mpi():
@@ -181,6 +196,7 @@ def fill_fration(trial_coordinates):
     radius = 1
     point_dist_from_origin = np.sum(trial_coordinates**2, axis=1)
     points_in_circle_index = np.where(point_dist_from_origin<radius, 1, 0)
+
     return points_in_circle_index
 
 def task2_function(trial_coordinates, x_0_input, sigma_input):
@@ -188,39 +204,10 @@ def task2_function(trial_coordinates, x_0_input, sigma_input):
     Task2 function: takes in a set of coordinates of any dimentions and returns
     an array of the resulting values
     """
-    top_of_fraction = -np.sum((trial_coordinates-x_0_input)**2, axis=1)
+
+    top_of_fraction = -np.linalg.norm((trial_coordinates - x_0_input), axis=1)**2
     function = 1/(sigma_input*np.sqrt(2*np.pi))*np.exp(top_of_fraction/(2*sigma_input**2))
     return function
-
-
-
-
-
-
-
-
-SAMPLES_PER_RANK = 10000000
-
-comm, numb_of_ranks, rank = start_mpi()
-
-# Task 1
-
-# test = MontyCarlos(SAMPLES_PER_RANK, 2, interval=[-1,1])
-
-# test.uniform_sampeling()
-# test.intergrate(fill_fration)
-# test.combine_paralel()
-
-
-# Task 2
-
-D=2
-x_0 = np.ones(D)
-SIGMA = 1.0
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, x_0, SIGMA)
-test2.combine_paralel()
 
 
 #%% task1 with importance
@@ -245,9 +232,19 @@ test2.combine_paralel()
 #     distribution = (np.log(np.exp(x*a)-1)+dimention)/a
 #     return distribution
 
+
 #%%
 
-SAMPLES_PER_RANK = 1000000
+
+
+TOTAL_SAMPLES = 10000000
+
+comm, numb_of_ranks, rank = start_mpi()
+
+
+
+#SAMPLES_PER_RANK = TOTAL_SAMPLES//numb_of_ranks
+SAMPLES_PER_RANK = TOTAL_SAMPLES
 # Task 1
 
 test = MontyCarlos(SAMPLES_PER_RANK, 2, interval=[-1,1])
@@ -256,69 +253,77 @@ test.intergrate(fill_fration)
 test.combine_paralel()
 
 
-test = MontyCarlos(SAMPLES_PER_RANK, 3, interval=[-1,1])
-test.uniform_sampeling()
-test.intergrate(fill_fration)
-test.combine_paralel()
 
 
-test = MontyCarlos(SAMPLES_PER_RANK, 4, interval=[-1,1])
-test.uniform_sampeling()
-test.intergrate(fill_fration)
-test.combine_paralel()
+# test = MontyCarlos(SAMPLES_PER_RANK, 3, interval=[-1,1])
+# test.uniform_sampeling()
+# test.intergrate(fill_fration)
+# test.combine_paralel()
 
 
-test = MontyCarlos(SAMPLES_PER_RANK, 5, interval=[-1,1])
-test.uniform_sampeling()
-test.intergrate(fill_fration)
-test.combine_paralel()
+# test = MontyCarlos(SAMPLES_PER_RANK, 4, interval=[-1,1])
+# test.uniform_sampeling()
+# test.intergrate(fill_fration)
+# test.combine_paralel()
+
+
+# test = MontyCarlos(SAMPLES_PER_RANK, 5, interval=[-1,1])
+# test.uniform_sampeling()
+# test.intergrate(fill_fration)
+# test.combine_paralel()
 
 
 # Task 2
 
-D=1
-X_0 = 5
-SIGMA = 1
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
-
-X_0 = -6
-SIGMA = 1
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
-
-X_0 = 20
-SIGMA = 1
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
-
-
 D=6
-X_0 = np.array([5, 6, 7, 8, 9, 4])
-SIGMA = 1
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
-
-X_0 = np.array([0.2, 4, 7, 7, 0.5, 20])
+#X_0 = np.array([1, 0.5, 2, 1, 0.3, 4])
+X_0 = np.ones(D)*0
 SIGMA = 10
 test2 = MontyCarlos(SAMPLES_PER_RANK, D)
 test2.uniform_sampeling()
 test2.intergrate(task2_function, X_0, SIGMA)
 test2.combine_paralel()
 
-X_0 = np.array([20, -4, -5, 6, 6, -0.5])
-SIGMA = 0.5
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
+if rank==0:
+    print('\n\n',max(test2.function_samples))
+    print(min(test2.function_samples))
+
+
+# X_0 = -6
+# SIGMA = 1
+# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
+# test2.uniform_sampeling()
+# test2.intergrate(task2_function, X_0, SIGMA)
+# test2.combine_paralel()
+
+# X_0 = 20
+# SIGMA = 1
+# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
+# test2.uniform_sampeling()
+# test2.intergrate(task2_function, X_0, SIGMA)
+# test2.combine_paralel()
+
+
+# D=6
+# X_0 = np.array([5, 6, 7, 8, 9, 4])
+# SIGMA = 1
+# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
+# test2.uniform_sampeling()
+# test2.intergrate(task2_function, X_0, SIGMA)
+# test2.combine_paralel()
+
+# X_0 = np.array([0.2, 4, 7, 7, 0.5, 20])
+# SIGMA = 10
+# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
+# test2.uniform_sampeling()
+# test2.intergrate(task2_function, X_0, SIGMA)
+# test2.combine_paralel()
+
+# X_0 = np.array([20, -4, -5, 6, 6, -0.5])
+# SIGMA = 0.5
+# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
+# test2.uniform_sampeling()
+# test2.intergrate(task2_function, X_0, SIGMA)
+# test2.combine_paralel()
 
 end_mpi()
