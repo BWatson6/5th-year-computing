@@ -3,6 +3,8 @@
 Created on Wed Mar 12 13:49:04 2025
 
 @author: Ben
+
+Copyright (C) 2025 Ben Watson. Subject to MIT License  
 """
 
 #clean slate
@@ -11,11 +13,14 @@ import math
 import numpy as np
 from mpi4py import MPI
 
+comm = MPI.COMM_WORLD
+numb_of_ranks = comm.Get_size()
+rank = comm.Get_rank()
 
 start_time = time.time()
 
 
-class MontyCarlos():
+class MonteCarlo():
     """
     # How to use class
     1. inisalise MontyCarlos class while defining:
@@ -27,12 +32,14 @@ class MontyCarlos():
 
     3. define how you want to generate the random numbers current optioins are:
         uniformSampling - all numbers within interval has equal probiblity
-        ImportanceSampling - need tom imput a function to change how commen some numbers are
+        ImportanceSampling - need to input a function to change how commen some numbers are
 
     4. call intergrate with desired function to intergrate it
 
-    5. If using Paralisation use CombineParalel to output to print out the combined
+    5. use Paralisation use CombineParalel to output to print out the combined
         integral with its uncertainty
+        
+    
     """
 
     def __init__(self, numb_of_samples, dimentions, interval=None):
@@ -69,9 +76,15 @@ class MontyCarlos():
         aditional perameters *args
         
         saves to random inputs
+        
+        --not acctualy nessisary for the way I tried to do importance sampling
+        in the end as I but the random number generation into the function
+        aswell
         """
+
         self.uniform_sampeling()
         self.random_inputs = function(self.random_inputs, *args)
+
 
 
     def intergrate(self, function, *args):
@@ -142,48 +155,33 @@ class MontyCarlos():
             uncertainty_global = np.sqrt(varience_global)*boundry_product
 
             end_time = time.time()
-            print('Intergral is:', intergral_global,
+            print('------------\n Intergral is:', intergral_global,
                   '+/-', uncertainty_global)
-            print('time to calculate', end_time-start_time)
+            print('\nfunction is:', expected_val_global/numb_of_ranks,
+                  '+/-', uncertainty_global/boundry_product)
+            print('\ntime to calculate', end_time-start_time)
 
 
     def varience(self, array):
         """
-        calculates the varience when not paralised 
+        calculates the varience when not paralised, uses the 
+        mean function below, makeing use of fsum, unsure if this is better 
+        than just useing the np functions. 
         """
         # wasn't sure I was doing the varience right with np so got this
-        part1 = np.mean(array**2)
-        part2 = np.mean(array)**2
+        part1 = self.mean(array**2)
+        part2 = self.mean(array)**2
         var = (part1-part2)/len(array)
         return var
 
     def mean(self, array):
         """
         returns the mean of an array of values useing fsum to 
-        try and increase the accuracy of the sum
+        try and increase the accuracy of the sum on each rank
 
         """
         return math.fsum(array)/len(array)
 
-
-def start_mpi():
-    """
-    initalises parallel codeing and returns:
-    comm - comunication class?
-    number of ranks
-    rank index
-    
-    """
-    comm_in = MPI.COMM_WORLD
-    numb_of_ranks_in = comm_in.Get_size()
-    rank_in = comm_in.Get_rank()
-    return comm_in, numb_of_ranks_in, rank_in
-
-def end_mpi():
-    """
-    unnecessary definition to stop the paralisation 
-    """
-    MPI.Finalize()
 
 def fill_fration(trial_coordinates):
     """
@@ -210,36 +208,97 @@ def task2_function(trial_coordinates, x_0_input, sigma_input):
     return function
 
 
-#%% task1 with importance
-
-# def Task1ImportanceFunc(x, dimention):
-#     # probibility part
-#     r_array = np.sqrt(np.sum(x**2, axis=1))
-#     distribution = 1/(1+np.exp(-6*r_array+dimention))
-#     normaling = 6/(np.log((np.exp(6*np.sqrt(dimention))+np.exp(dimention))))
-#     distribution = distribution*normaling
-
-#     #Task one functioned copied from above:
-#     radius = 1
-#     point_dist_from_origin = np.sum(x**2, axis=1)
-#     points_in_circle_index = np.where(point_dist_from_origin<radius, 1, 0)
-
-#     function = points_in_circle_index/distribution
-#     return function
-
-# def Task1RandomDistribution(x, dimention):
-#     a = -6
-#     distribution = (np.log(np.exp(x*a)-1)+dimention)/a
-#     return distribution
 
 
 #%%
 
+def task2_hell(coords_in, x_0_in, sigma_in):
+    '''
+    Importance sampling function attempt for task 2
+    - this function doesnt actualy work but am leaving it in as evidence that I
+    tried to get importance sampling working to improve the accuracy of the
+    second task. 
+    
+    When subed into the monte carlo class the value of the intergral should be 
+    read off just as the mean of the function and its uncertainty rather than
+    the number defined as the intergral as there is no need to ultiply by the 
+    boundry conditions.
+    
+    think the main issue is from incorrectly normalising the weight function
+    and the sample_vals function but also likely code errors as it has gotten 
+    conviluted
+    
+    '''
+
+    def task2_base_func(trial_coordinates, x_0_input, sigma_input):
+        """
+        Task2 function: takes in a set of coordinates of any dimentions and returns
+        an array of the resulting values
+        """
+
+        top_of_fraction = -np.linalg.norm((trial_coordinates - x_0_input), axis=1)**2
+        function = 1/(sigma_input*np.sqrt(2*np.pi))*np.exp(top_of_fraction/(2*sigma_input**2))
+        return function
+
+    def weight(coords, x_0_in, sigma_in):
+        '''
+        weight function is a function that takes the shape of a form e^-x
+        when greater than the ofset value and e^x when smaller than that
+        '''
+        dimenstion = len(coords[0])
+        def greater(coords, x_o):
+            return np.exp(-(coords-x_o)/(2*sigma_in**2))
+        def fewer(coords, x_o):
+            return np.exp((coords-x_o)/(2*sigma_in**2))
+
+        function = coords*1.0
+
+        for i in range (len(coords[0])):
+            function[:,i] = np.where(coords[:,i]>x_0_in[i],
+                                     greater(coords[:,i], x_0_in[i]),
+                                     fewer(coords[:,i], x_0_in[i]))
+
+        function = (4*sigma_in**2)**-dimenstion * np.product(function, axis=1)
+
+        return function
 
 
-TOTAL_SAMPLES = 10000000
+    def sample_vals(coords, x_0_in, sigma):
+        '''
+        this function that is used to change a uniform distribution of random
+        numbers into ones with a distribution similar to that of the function
+        of Task2
+        
+        '''
 
-comm, numb_of_ranks, rank = start_mpi()
+        dimension = len(coords[0])
+        normaling = (4*sigma_in**2)**-dimension
+        def equ1(coords, x_o):
+            value1 = np.log((4*normaling*sigma**2-coords)/(2*normaling*sigma**2))*2*sigma**2
+            return x_o-value1
+
+        def equ2(coords, x_o):
+            value1 = 2*sigma**2*np.log(coords/(2*normaling*sigma**2))
+            return value1+x_o
+
+        new_coords = coords*1.0
+        for i in range (len(coords[0])):
+            new_coords[:,i] = np.where(coords[:,i]>(2*normaling*sigma),
+                                       equ1(coords[:,i], x_0_in[i]),
+                                       equ2(coords[:,i], x_0_in[i]))
+
+        return new_coords
+
+    changed_coords = sample_vals(coords_in, x_0_in, sigma_in)
+    final_function_part1 = task2_base_func(changed_coords, x_0_in, sigma_in)
+    final_function_part2 = weight(changed_coords, x_0_in, sigma_in)
+    return final_function_part1/final_function_part2
+
+#%% example code to show how its used
+
+
+
+TOTAL_SAMPLES = 1000000
 
 
 
@@ -247,83 +306,33 @@ comm, numb_of_ranks, rank = start_mpi()
 SAMPLES_PER_RANK = TOTAL_SAMPLES
 # Task 1
 
-test = MontyCarlos(SAMPLES_PER_RANK, 2, interval=[-1,1])
-test.uniform_sampeling()
-test.intergrate(fill_fration)
-test.combine_paralel()
-
-
-
-
-# test = MontyCarlos(SAMPLES_PER_RANK, 3, interval=[-1,1])
-# test.uniform_sampeling()
-# test.intergrate(fill_fration)
-# test.combine_paralel()
-
-
-# test = MontyCarlos(SAMPLES_PER_RANK, 4, interval=[-1,1])
-# test.uniform_sampeling()
-# test.intergrate(fill_fration)
-# test.combine_paralel()
-
-
-# test = MontyCarlos(SAMPLES_PER_RANK, 5, interval=[-1,1])
-# test.uniform_sampeling()
-# test.intergrate(fill_fration)
-# test.combine_paralel()
+task1 = MonteCarlo(SAMPLES_PER_RANK, 2, interval=[-1,1])
+task1.uniform_sampeling()
+task1.intergrate(fill_fration)
+task1.combine_paralel()
 
 
 # Task 2
 
-D=6
+D=2
 #X_0 = np.array([1, 0.5, 2, 1, 0.3, 4])
-X_0 = np.ones(D)*0
+X_0 = np.ones(D)*4
 SIGMA = 10
-test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-test2.uniform_sampeling()
-test2.intergrate(task2_function, X_0, SIGMA)
-test2.combine_paralel()
+task2 = MonteCarlo(SAMPLES_PER_RANK, D)
+task2.uniform_sampeling()
+task2.intergrate(task2_function, X_0, SIGMA)
+task2.combine_paralel()
 
-if rank==0:
-    print('\n\n',max(test2.function_samples))
-    print(min(test2.function_samples))
+#%% importance sampling - very much doesn't work
 
-
-# X_0 = -6
-# SIGMA = 1
-# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-# test2.uniform_sampeling()
-# test2.intergrate(task2_function, X_0, SIGMA)
-# test2.combine_paralel()
-
-# X_0 = 20
-# SIGMA = 1
-# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-# test2.uniform_sampeling()
-# test2.intergrate(task2_function, X_0, SIGMA)
-# test2.combine_paralel()
+X_0 = np.ones(D)*4
+SIGMA = 10
+# interval here is definitly wrong but at least it runs lol
+task2 = MonteCarlo(SAMPLES_PER_RANK, D, interval=[0,5])
+task2.uniform_sampeling()
+task2.intergrate(task2_function, X_0, SIGMA)
+task2.combine_paralel()
 
 
-# D=6
-# X_0 = np.array([5, 6, 7, 8, 9, 4])
-# SIGMA = 1
-# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-# test2.uniform_sampeling()
-# test2.intergrate(task2_function, X_0, SIGMA)
-# test2.combine_paralel()
 
-# X_0 = np.array([0.2, 4, 7, 7, 0.5, 20])
-# SIGMA = 10
-# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-# test2.uniform_sampeling()
-# test2.intergrate(task2_function, X_0, SIGMA)
-# test2.combine_paralel()
-
-# X_0 = np.array([20, -4, -5, 6, 6, -0.5])
-# SIGMA = 0.5
-# test2 = MontyCarlos(SAMPLES_PER_RANK, D)
-# test2.uniform_sampeling()
-# test2.intergrate(task2_function, X_0, SIGMA)
-# test2.combine_paralel()
-
-end_mpi()
+MPI.Finalize()
