@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matplotlib import cm
-
+#from montycarlo_class import MonteCarlo
 
 class gridthing():
     def __init__(self, N, start_val, boundry_val, interval):
@@ -53,11 +53,11 @@ class gridthing():
                 for y_counter in range (1, self.N+1):
                     part1 = grid_array[x_counter+1][y_counter]+grid_array[x_counter-1][y_counter]+grid_array[x_counter][y_counter+1]+grid_array[x_counter][y_counter-1]
                     part2 = h**2* function(X[x_counter-1], Y[y_counter-1])
-                    # grid_array[x_counter][y_counter] = 0.25*(part1-part2)
+                    grid_array[x_counter][y_counter] = 0.25*(part1-part2)
                     
                     #overrelaxed_version
-                    grid_array[x_counter][y_counter] = 0.25*omega*(part1-part2)+(1-omega)*grid_array[x_counter][y_counter]
-                    
+                    # grid_array[x_counter][y_counter] = 0.25*omega*(part1-part2)+(1-omega)*grid_array[x_counter][y_counter]
+      
             change = np.max(np.abs((previous_grid[1:self.N+1,1:self.N+1]-grid_array[1:self.N+1,1:self.N+1])/previous_grid[1:self.N+1,1:self.N+1]))
             #print('change value', change)
             counter +=1
@@ -89,8 +89,12 @@ class gridthing():
         # ngl I think my walker function is currently pretty fucked 
         
         for i in range(walk_numb):
-            position = start_point
+            # rest possition back to the start
+            position = [start_point[0],start_point[1]]
+
             while position[0] in range(1, self.N+1) and position[1] in range(1, self.N+1):
+                # function grid is of size NxN, if position is in grid array
+                # need to switch to make it match up
                 function_counter += function_grid[position[0]-1, position[1]-1]  
                 direction = np.random.choice([1, 2, 3, 4], 
                                              p=[0.25, 0.25, 0.25, 0.25], 
@@ -104,7 +108,7 @@ class gridthing():
                 else:
                     position = [position[0], position[1]-1]
                   
-            grid_for_counts[position[0], position[1]] += 1
+                grid_for_counts[position[0], position[1]] += 1
                 
             
         distribution_list = grid_for_counts[self.boundry_index]
@@ -123,7 +127,9 @@ class gridthing():
         X_outer_product = np.outer(X, np.ones(len(X)))
         grid_function_vals = function(X_outer_product, np.transpose(X_outer_product))
         
+        
         #1. calculate the greens function at each point
+        point = [point[0]+1, point[1]+1] # convert to grid array index
         green_func, green_grid = self.walker(walk_numb, point, grid_function_vals)
         # boundry greens func mutiplyed by the value at the boundry
         point1 = np.sum(green_func*self.grid_array[self.boundry_index])
@@ -135,31 +141,105 @@ class gridthing():
         
         return point1+point2
 
+    def walker_vesion2(self, walk_numb, start_index):
+        
+        # assuming that the start index is in terms of the grid_array index
+        global_counts = self.grid_array*0
+        global_counts_squared = self.grid_array*0
+        probability_grid = self.grid_array*0
+        
+
+        
+        for i in range (0, walk_numb):
+            
+            position = start_index*1
+            walker_counts = self.grid_array*0
+            while position[0] in range(1, self.N+1) and position[1] in range(1, self.N+1):
+                direction = np.random.choice([1, 2, 3, 4], 
+                                             p=[0.25, 0.25, 0.25, 0.25], 
+                                             size=(1))
+                if direction==1:
+                    position = [position[0]+1, position[1]]                    
+                elif direction==2:
+                    position = [position[0], position[1]+1]
+                elif direction==3:
+                    position = [position[0]-1, position[1]]
+                else:
+                    position = [position[0], position[1]-1]
+                walker_counts[position[0], position[1]] += 1
+            
+            global_counts += walker_counts
+            global_counts_squared += walker_counts**2
+            visited_sites = np.where(walker_counts>0, 1, 0)
+            probability_grid += visited_sites
+            
+        
+        # VAREINECE PART
+        part1 = global_counts/walk_numb
+        part2 = global_counts_squared/walk_numb
+        varience = (part2-part1**2)/walk_numb
+        print('varience is:', np.sum(varience))
+        
+        
+        # VARIENCE PART END
+        
+        return probability_grid
+
+    def function_val(self, walk_numb, point_index, function):
+        X = np.linspace(self.interval[0], self.interval[1], self.N)
+        X_outer_product = np.outer(X, np.ones(len(X)))
+        h = (self.interval[1]-self.interval[0])/self.N
+        grid_function_vals = function(X_outer_product, np.transpose(X_outer_product))
+        
+        point_index = [point_index[0]+1, point_index[1]+1]
+        Green_array = self.walker_vesion2(walk_numb, point_index)/walk_numb
+
+
+        #laplace part
+        Green_array[self.boundry_index] = Green_array[self.boundry_index]*self.grid_array[self.boundry_index]
+        
+        #possion part
+        Green_array[1:self.N+1, 1:self.N+1] = -Green_array[1:self.N+1, 1:self.N+1]*grid_function_vals*h**2
+        
+        return np.sum(Green_array)
+
+
+    
+    
 def Funciton(x, y):
-    return 0*x+0*y #x*2+y**2
+    return (x**2+np.cos(y))
 
 
 
 
-N_val = 25
+N_val = 15
 initial_value = 5
-bounbry_value = 0.1
+bounbry_value = 0.01
 interval = [-10, 10]
 
-point_of_interest = [10, 10]
+point_of_interest = [3,3]
 
 # now for the trouble shooting :((
 
 
 a = gridthing(N_val, initial_value, bounbry_value, interval)
-a.grid_array[:,0]=2
-#b = a.walker(1000, [2,2])
-b = a.Function_at_point(5000, point_of_interest, Funciton)
+a.grid_array[:,0]=-1
+a.grid_array[:,N_val+1]=-1
+
+# a.grid_array[0] = 1
+# a.grid_array[N_val+1] = 1
+
+
+# input here is for a point in NxN array but then gets converted to 
+# b = a.Function_at_point(1000, point_of_interest, Funciton)
+
+c = a.function_val(1000, point_of_interest, Funciton)
 
 # # a.grid_array[N_val][N_val]=2
 a.intergrator(Funciton)
 print('over-relaxed method:', a.grid_array[point_of_interest[0], point_of_interest[1]])
-print('walker method:', b)
+# print('walker method 1:', b)
+print('walker method 2:', c)
 a.plot()
 
 '''
@@ -168,6 +248,14 @@ am i comparing the right points from the different intergration methods?
 for the over relaxed method I am taking the valu from the grid array wich is
 of dimentions (N+2)x(N+2)
 
-for the walker method where am i taking it from?
+for the walker method input location in NxN grid but then gets conferted into
+the grid array index for doing any calculations.
 
+seems to be a lot of variation in the result from the walker method.
+
+
+now ned to figure out how to do the thing for the possion case coz seems to be
+in the ball park for the laplacian version
+
+how am i lossing negative values?? or maybe my over-relax is wierd
 '''
