@@ -2,8 +2,9 @@
 """
 Created on Wed May 14 12:25:00 2025
 
-@author: Ben
-cleaning code
+Copyright (C) 2025 Ben Watson. Subject to MIT License
+
+Assignment4 code that has been cleaned up a bit
 """
 
 import numpy as np
