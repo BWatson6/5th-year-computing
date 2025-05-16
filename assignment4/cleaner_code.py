@@ -31,7 +31,7 @@ class GridThing():
         for the equation at a given point
     '''
 
-    def __init__(self, n_val, start_val, boundry_val, interval):
+    def __init__(self, n_val, start_val, boundry_val, interval_list):
         '''
         This sets up an array for solving a grid of size n_valxn_val with a boundries 
         around that which can be used to add boundry condisions
@@ -46,7 +46,7 @@ class GridThing():
         '''
         self.n_val = n_val
         self.boundry_val = boundry_val
-        self.interval = interval
+        self.interval = interval_list
         # makeing up the grid
         grid_array = np.zeros((n_val+2, n_val+2))
         n_grid = np.ones((n_val, n_val)) * start_val
@@ -71,7 +71,7 @@ class GridThing():
         the smallest largest change in values from the previous iteration
 
         '''
-        def gaus_seidel():
+        def solver():
             # equation is split up to make pylint happy
             part1a = self.grid_array[y_counter+1][x_counter]
             part1b = self.grid_array[y_counter-1][x_counter]
@@ -82,11 +82,11 @@ class GridThing():
             part2 = self.h_val**2* function(x_array[x_counter-1],
                                             y_array[y_counter-1])
 
-            self.grid_array[y_counter][x_counter] = 0.25*(part1+part2)
-            ## overrelaxed_version
-            # part1 = 0.25*omega*(part1+part2)
-            # part2 = (1-omega)*grid_array[y_counter][x_counter]
-            # grid_array[y_counter][x_counter] = part1+part2
+            # self.grid_array[y_counter][x_counter] = 0.25*(part1+part2)
+            # overrelaxed_version
+            part1 = 0.25*omega*(part1+part2)
+            part2 = (1-omega)*self.grid_array[y_counter][x_counter]
+            self.grid_array[y_counter][x_counter] = part1+part2
 
         x_array = np.linspace(self.interval[0], self.interval[1], self.n_val)
         y_array = x_array * 1
@@ -99,7 +99,7 @@ class GridThing():
             previous_grid = self.grid_array*1
             for y_counter in range (1, self.n_val+1):
                 for x_counter in range (1, self.n_val+1):
-                    gaus_seidel()
+                    solver()
 
             if counter>10: # this is just to try and avoid divide by 0 issue wth this
                 part1 = previous_grid[1:self.n_val+1,1:self.n_val+1]
@@ -202,9 +202,11 @@ class GridThing():
         greens_function = global_counts/walk_numb
         # Calculating varience arrays
         varience_step = global_counts_squared/walk_numb
-        varience = (varience_step-greens_function**2)
-        greens_function[1:self.n_val+1,1:self.n_val+1] = correction_val*greens_function[1:self.n_val+1,1:self.n_val+1]
-        varience[1:self.n_val+1,1:self.n_val+1] = correction_val*varience[1:self.n_val+1,1:self.n_val+1]
+        varience = (varience_step-greens_function**2)/walk_numb
+        pylint_step1 = correction_val*greens_function[1:self.n_val+1,1:self.n_val+1]
+        greens_function[1:self.n_val+1,1:self.n_val+1] = pylint_step1
+        pylint_step1 = correction_val*varience[1:self.n_val+1,1:self.n_val+1]
+        varience[1:self.n_val+1,1:self.n_val+1] = pylint_step1
         return greens_function, varience
 
 
@@ -236,13 +238,9 @@ class GridThing():
         function_at_point = np.sum(greens_function*potential_grid)
         # not 100% if this step is correct
         varience_combined_with_potential = greens_varience * potential_grid**2
-        self.temp = greens_function*potential_grid
         uncertainty_in_ans = np.sqrt(np.sum(varience_combined_with_potential))
         print(function_at_point, '+/-', uncertainty_in_ans)
-        
-        ##uncertainty alturnative
-        uncertainty = np.sqrt(greens_varience)
-        
+
         return function_at_point
 
 
@@ -253,13 +251,13 @@ def function0(x_val, y_val): # this one is just for testing
     '''
     function for laplace equation
     '''
-    return 10*x_val+0*y_val
+    return 0 + 0*x_val*y_val
 
 def function_a(x_val, y_val):
     '''
     function for exersise 4-5
     '''
-    return 10
+    return 10+0*x_val*y_val
 
 
 def function_b(x_val, y_val):
@@ -273,7 +271,7 @@ def function_c(x_val,y_val):
     '''
     function for exersise 4-5
     '''
-    
+
     center = np.array([5,5])
     r_val = np.sqrt((x_val-center[0])**2 + (y_val-center[1])**2)
     return np.exp(-2000*r_val)
@@ -281,7 +279,7 @@ def function_c(x_val,y_val):
 
 def boundrys_b(grid_class, n_val):
     '''
-    
+    used to set the boundry condisions for ex4
     '''
     grid_class.grid_array[1:n_val+1,0]=-1
     grid_class.grid_array[1:n_val+1,n_val+1]=-1
@@ -291,6 +289,10 @@ def boundrys_b(grid_class, n_val):
 
 
 def boundrys_c(grid_class, n_val):
+    '''
+    used to set the boundry condisions for ex4
+    '''
+
     grid_class.grid_array[1:n_val+1,0]= 2 # left
     grid_class.grid_array[1:n_val+1,n_val+1]=-4 # right
 
@@ -298,77 +300,48 @@ def boundrys_c(grid_class, n_val):
     grid_class.grid_array[n_val+1, 1:n_val+1] = 0 # bottem
 
 def boundrys_a(grid_class, n_val):
+    '''
+    used to set the boundry condisions for ex4
+    '''
+
     grid_class.grid_array[1:n_val+1,0]= 1 # left
     grid_class.grid_array[1:n_val+1,n_val+1]=1 # right
 
     grid_class.grid_array[0, 1:n_val+1] = 1 #top
     grid_class.grid_array[n_val+1, 1:n_val+1] = 1 # bottem
-#%% 
+#%%
 
 
-N_val = 17
-initial_value = 5
-bounbry_value = 1
+N_VAL = 15
+INITIAL_VAL = 5
+BOUNDRY_VAL = 1
 interval = np.array([0, 10e-2]) # in meters to match with SI units
 
-point_of_interest = np.array([5e-2, 5e-2]) # now as spacial coordinate
+point_of_interest = np.array([2.5e-2, 5e-2]) # now as spacial coordinate
 
-a = GridThing(N_val, initial_value, bounbry_value, interval)
+a = GridThing(N_VAL, INITIAL_VAL, BOUNDRY_VAL, interval)
 
-walkers = 10000
-green1_poission, green1_laplace = a.greens_calc(walkers,
-                                                np.array([5e-2, 5e-2]))
-green2_poission, green2_laplace = a.greens_calc(walkers,
-                                                np.array([2.5e-2, 2.5e-2]))
-green3_poission, green3_laplace = a.greens_calc(walkers,
-                                                np.array([0.1e-2, 2.5e-2]))
-green4_poission, green4_laplace = a.greens_calc(walkers,
-                                                np.array([0.1e-2, 0.1e-2]))
+WALKERS = 1000
+green1_poission, green1_laplace = a.greens_calc(WALKERS,
+                                                point_of_interest)
+#%% ex3 plots
+# fig1, ((ax11, ax12),
+#        (ax13, ax14)) = plt.subplots(2, 2, figsize=(10, 10))
+
+# ax11.imshow(green1_poission)
+# ax11.set(title='centre')
+# ax12.imshow(green2_poission)
+# ax12.set(title='(2.5, 2.5)')
+# ax13.imshow(green3_poission)
+# ax13.set(title='(0.1, 2.5)')
+# ax14.imshow(green4_poission)
+# ax14.set(title='(0.1, 0.1)')
 #%%
-fig1, ((ax11, ax12),
-       (ax13, ax14)) = plt.subplots(2, 2, figsize=(10, 10))
-
-ax11.imshow(green1_poission)
-ax11.set(title='centre')
-ax12.imshow(green2_poission)
-ax12.set(title='(2.5, 2.5)')
-ax13.imshow(green3_poission)
-ax13.set(title='(0.1, 2.5)')
-ax14.imshow(green4_poission)
-ax14.set(title='(0.1, 0.1)')
-#%%
+index = a.coord_to_grid_index(point_of_interest)
 # value at different points when f=0 and boundry = 1
-boundrys_a(a, N_val)
-a.intergrator(function0)
+boundrys_a(a, N_VAL)
+a.intergrator(function_c)
 
 check_a = a.grid_array*1
-a.plot()
-ex4a1 = a.function_val(green1_poission, green1_laplace, function0)
-ex4a2 = a.function_val(green2_poission, green2_laplace, function0)
-ex4a3 = a.function_val(green3_poission, green3_laplace, function0)
-ex4a4 = a.function_val(green4_poission, green4_laplace, function0)
-# need condi
-# differnet boundry for 4b.
-boundrys_b(a, N_val)
-a.intergrator(function0)
-check_b = a.grid_array*1
-# a.plot()
-ex4b1 = a.function_val(green1_poission, green1_laplace, function0)
-ex4b2 = a.function_val(green2_poission, green2_laplace, function0)
-ex4b3 = a.function_val(green3_poission, green3_laplace, function0)
-ex4b4 = a.function_val(green4_poission, green4_laplace, function0)
-
-# differnet boundry for 4c.
-boundrys_c(a, N_val)
-a.intergrator(function0)
-check_c = a.grid_array*1
-# a.plot()
-ex4c1 = a.function_val(green1_poission, green1_laplace, function0)
-ex4c2 = a.function_val(green2_poission, green2_laplace, function0)
-ex4c3 = a.function_val(green3_poission, green3_laplace, function0)
-ex4c4 = a.function_val(green4_poission, green4_laplace, function0)
-
-
-
-
-       
+print('answer deterministic:', check_a[index[0], index[1]])
+ex4a1 = a.function_val(green1_poission, green1_laplace, function_c)
